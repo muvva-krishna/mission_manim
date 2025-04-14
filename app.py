@@ -1,8 +1,11 @@
 import streamlit as st
 import os
 import time
-from codegen import generate_manim_code, clean_code, fix_code
+from codegen import AnimationGenerator  # Import the class instead of individual functions
 from manim_runner import run_manim
+
+# Groq API key should be set in the environment variables
+animation_generator = AnimationGenerator(api_key=os.environ.get("GROQ_API_KEY"))
 
 def wait_for_file(file_path, timeout=10):
     """Waits until the video file is fully written."""
@@ -15,19 +18,23 @@ def wait_for_file(file_path, timeout=10):
 st.set_page_config(page_title="Manim Math Assistant", page_icon="🎓")
 st.title("🎓 Manim Math Assistant")
 
+# Take input from user
 prompt = st.text_input("Enter your math concept:")
 
 if st.button("Generate Animation") and prompt.strip():
-    with st.spinner("🔧 Generating Manim code..."):
-        raw_code = generate_manim_code(prompt)
-        code = clean_code(raw_code)
-        fixed_code = fix_code(code)
+    with st.spinner("🧠 Thinking like an animator..."):
+        animation_plan, final_code = animation_generator.generate_final_manim_code(prompt)
 
+    # Display the animation plan
+    st.subheader("🪄 Animation Plan")
+    st.markdown(animation_plan)
+
+    # Display the generated Manim code
     st.subheader("📜 Generated Code")
-    st.code(fixed_code, language="python")
+    st.code(final_code, language="python")
 
     with st.spinner("🎞️ Rendering animation..."):
-        video_path = run_manim(fixed_code)
+        video_path = run_manim(final_code)
 
     if video_path and wait_for_file(video_path):
         st.success("✅ Animation generated!")
